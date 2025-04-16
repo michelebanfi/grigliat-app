@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/grigliatapp/static/css/main.9d7092ca.css",
+    "main.js": "/grigliatapp/static/js/main.3296f823.js",
+    "static/js/453.13ffd1df.chunk.js": "/grigliatapp/static/js/453.13ffd1df.chunk.js",
+    "index.html": "/grigliatapp/index.html",
+    "main.9d7092ca.css.map": "/grigliatapp/static/css/main.9d7092ca.css.map",
+    "main.3296f823.js.map": "/grigliatapp/static/js/main.3296f823.js.map",
+    "453.13ffd1df.chunk.js.map": "/grigliatapp/static/js/453.13ffd1df.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.9d7092ca.css",
+    "static/js/main.3296f823.js"
+  ]
+}
