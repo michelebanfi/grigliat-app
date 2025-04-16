@@ -17,23 +17,23 @@ function App() {
     { value: "Wurstel 🍖", label: "Wurstel 🍖" },
     { value: "Ribs 🥩", label: "Ribs 🥩" },
     { value: "Chicken Wings 🍗", label: "Chicken Wings 🍗" },
-    { value: "Burgers 🍔", label: "Burgers 🍔" }
+    { value: "Burgers 🍔", label: "Burgers 🍔" },
   ];
-  
+
   const beverageOptions = [
     { value: "Beer 🍺", label: "Beer 🍺" },
     { value: "Wine 🍷", label: "Wine 🍷" },
     { value: "Coca-Cola 🥤", label: "Coca-Cola 🥤" },
     { value: "Water 💧", label: "Water 💧" },
-    { value: "Juice 🧃", label: "Juice 🧃" }
+    { value: "Juice 🧃", label: "Juice 🧃" },
   ];
-  
+
   const sideDishOptions = [
     { value: "Potatoes 🥔", label: "Potatoes 🥔" },
     { value: "Peppers 🌶️", label: "Peppers 🌶️" },
     { value: "Zucchini 🥒", label: "Zucchini 🥒" },
     { value: "Corn on the Cob 🌽", label: "Corn on the Cob 🌽" },
-    { value: "Salad 🥗", label: "Salad 🥗" }
+    { value: "Salad 🥗", label: "Salad 🥗" },
   ];
 
   // State for calculation results
@@ -49,9 +49,12 @@ function App() {
         // Using decodeURIComponent instead of atob for proper handling of special characters
         const decodedPlan = JSON.parse(decodeURIComponent(planParam));
         if (decodedPlan.participants) setParticipants(decodedPlan.participants);
-        if (decodedPlan.selectedMeatTypes) setSelectedMeatTypes(decodedPlan.selectedMeatTypes);
-        if (decodedPlan.selectedBeverageTypes) setSelectedBeverageTypes(decodedPlan.selectedBeverageTypes);
-        if (decodedPlan.selectedSideDishTypes) setSelectedSideDishTypes(decodedPlan.selectedSideDishTypes);
+        if (decodedPlan.selectedMeatTypes)
+          setSelectedMeatTypes(decodedPlan.selectedMeatTypes);
+        if (decodedPlan.selectedBeverageTypes)
+          setSelectedBeverageTypes(decodedPlan.selectedBeverageTypes);
+        if (decodedPlan.selectedSideDishTypes)
+          setSelectedSideDishTypes(decodedPlan.selectedSideDishTypes);
       } catch (error) {
         console.error("Error loading shared plan:", error);
       }
@@ -88,9 +91,9 @@ function App() {
 
   // Handle food selection checkboxes
   const handleMeatSelection = (value) => {
-    setSelectedMeatTypes(prev => {
+    setSelectedMeatTypes((prev) => {
       if (prev.includes(value)) {
-        return prev.filter(type => type !== value);
+        return prev.filter((type) => type !== value);
       } else {
         return [...prev, value];
       }
@@ -98,9 +101,9 @@ function App() {
   };
 
   const handleBeverageSelection = (value) => {
-    setSelectedBeverageTypes(prev => {
+    setSelectedBeverageTypes((prev) => {
       if (prev.includes(value)) {
-        return prev.filter(type => type !== value);
+        return prev.filter((type) => type !== value);
       } else {
         return [...prev, value];
       }
@@ -108,9 +111,9 @@ function App() {
   };
 
   const handleSideDishSelection = (value) => {
-    setSelectedSideDishTypes(prev => {
+    setSelectedSideDishTypes((prev) => {
       if (prev.includes(value)) {
-        return prev.filter(type => type !== value);
+        return prev.filter((type) => type !== value);
       } else {
         return [...prev, value];
       }
@@ -125,7 +128,9 @@ function App() {
       selectedBeverageTypes.length === 0 ||
       selectedSideDishTypes.length === 0
     ) {
-      alert("Please add participants and select at least one option for each food/beverage category.");
+      alert(
+        "Please add participants and select at least one option for each food/beverage category."
+      );
       return;
     }
 
@@ -135,21 +140,26 @@ function App() {
 
     // Calculate totals based on rules - 2 units per non-vegan for each meat type
     const meatTotals = {};
-    selectedMeatTypes.forEach(meatType => {
-      meatTotals[meatType] = Math.ceil(nonVeganParticipants * (2 / selectedMeatTypes.length));
+    selectedMeatTypes.forEach((meatType) => {
+      meatTotals[meatType] = Math.ceil(
+        nonVeganParticipants * (2 / selectedMeatTypes.length)
+      );
     });
 
     // 1.5 units per person for each beverage type
     const beverageTotals = {};
-    selectedBeverageTypes.forEach(bevType => {
-      beverageTotals[bevType] = Math.ceil(totalParticipants * (1.5 / selectedBeverageTypes.length));
+    selectedBeverageTypes.forEach((bevType) => {
+      beverageTotals[bevType] = Math.ceil(
+        totalParticipants * (1.5 / selectedBeverageTypes.length)
+      );
     });
 
     // 1 for non-vegan, 2 for vegan for each side dish
     const sideDishTotals = {};
-    selectedSideDishTypes.forEach(sideType => {
+    selectedSideDishTypes.forEach((sideType) => {
       sideDishTotals[sideType] = Math.ceil(
-        (nonVeganParticipants * 1 + veganParticipants * 2) / selectedSideDishTypes.length
+        (nonVeganParticipants * 1 + veganParticipants * 2) /
+          selectedSideDishTypes.length
       );
     });
 
@@ -172,34 +182,40 @@ function App() {
   };
 
   // Optimize distribution of food and beverages among participants
-  const optimizeDistribution = (participants, meatTotals, beverageTotals, sideDishTotals) => {
+  const optimizeDistribution = (
+    participants,
+    meatTotals,
+    beverageTotals,
+    sideDishTotals
+  ) => {
     // Create a copy of participants to work with
     const distributionParticipants = [...participants];
-    
+
     // Initialize distribution with empty assignments
-    const distribution = distributionParticipants.map(p => ({
+    const distribution = distributionParticipants.map((p) => ({
       name: p.name,
       isVegan: p.isVegan,
-      items: []
+      items: [],
     }));
-    
+
     // Distribute meat types - only to non-vegans
     const nonVeganIndices = distributionParticipants
-      .map((p, i) => p.isVegan ? -1 : i)
-      .filter(i => i !== -1);
-    
+      .map((p, i) => (p.isVegan ? -1 : i))
+      .filter((i) => i !== -1);
+
     // Distribute meat - try to keep each type with one person if possible
     let meatTypeIndex = 0;
     Object.entries(meatTotals).forEach(([meatType, quantity]) => {
       // Find the best person to assign this meat type to
-      const personIndex = nonVeganIndices[meatTypeIndex % nonVeganIndices.length];
-      
+      const personIndex =
+        nonVeganIndices[meatTypeIndex % nonVeganIndices.length];
+
       // Add the meat item
       distribution[personIndex].items.push({
         type: meatType,
-        quantity: quantity
+        quantity: quantity,
       });
-      
+
       meatTypeIndex++;
     });
 
@@ -208,13 +224,13 @@ function App() {
     Object.entries(beverageTotals).forEach(([beverageType, quantity]) => {
       // Try to distribute evenly
       const personIndex = beverageTypeIndex % participants.length;
-      
+
       // Add the beverage item
       distribution[personIndex].items.push({
         type: beverageType,
-        quantity: quantity
+        quantity: quantity,
       });
-      
+
       beverageTypeIndex++;
     });
 
@@ -223,51 +239,55 @@ function App() {
     Object.entries(sideDishTotals).forEach(([sideType, quantity]) => {
       // Prefer giving side dishes to vegans first
       const veganIndices = distributionParticipants
-        .map((p, i) => p.isVegan ? i : -1)
-        .filter(i => i !== -1);
-      
+        .map((p, i) => (p.isVegan ? i : -1))
+        .filter((i) => i !== -1);
+
       if (veganIndices.length > 0) {
         const personIndex = veganIndices[sideTypeIndex % veganIndices.length];
         distribution[personIndex].items.push({
           type: sideType,
-          quantity: quantity
+          quantity: quantity,
         });
       } else {
         // If no vegans, distribute to anyone
         const personIndex = sideTypeIndex % participants.length;
         distribution[personIndex].items.push({
           type: sideType,
-          quantity: quantity
+          quantity: quantity,
         });
       }
-      
+
       sideTypeIndex++;
     });
-    
+
     // Balance the load a bit - check if some participants have nothing assigned
-    const unassignedParticipants = distribution.filter(p => p.items.length === 0);
-    
+    const unassignedParticipants = distribution.filter(
+      (p) => p.items.length === 0
+    );
+
     if (unassignedParticipants.length > 0) {
       // Find participants with more than one item
       const overloadedParticipants = distribution
         .map((p, index) => ({ index, itemCount: p.items.length }))
-        .filter(p => p.itemCount > 1)
+        .filter((p) => p.itemCount > 1)
         .sort((a, b) => b.itemCount - a.itemCount);
-      
+
       // Redistribute items from overloaded to unassigned participants
       unassignedParticipants.forEach((unassigned, unassignedIndex) => {
         if (overloadedParticipants.length > unassignedIndex) {
           const donorIndex = overloadedParticipants[unassignedIndex].index;
           const itemToMove = distribution[donorIndex].items.pop();
-          
-          const recipientIndex = distribution.findIndex(p => p.name === unassigned.name);
+
+          const recipientIndex = distribution.findIndex(
+            (p) => p.name === unassigned.name
+          );
           if (recipientIndex >= 0 && itemToMove) {
             distribution[recipientIndex].items.push(itemToMove);
           }
         }
       });
     }
-    
+
     return distribution;
   };
 
@@ -285,21 +305,21 @@ function App() {
     } = calculationResults;
 
     let exportText = `BBQ Plan! ☀️\n\n`;
-    
+
     exportText += `We need:\n`;
-    
+
     // Add meat totals
     exportText += `Meat:\n`;
     Object.entries(meatTotals).forEach(([meatType, quantity]) => {
       exportText += `- ${meatType} (Total: ${quantity})\n`;
     });
-    
+
     // Add beverage totals
     exportText += `\nBeverages:\n`;
     Object.entries(beverageTotals).forEach(([beverageType, quantity]) => {
       exportText += `- ${beverageType} (Total: ${quantity})\n`;
     });
-    
+
     // Add side dish totals
     exportText += `\nSides:\n`;
     Object.entries(sideDishTotals).forEach(([sideType, quantity]) => {
@@ -309,7 +329,7 @@ function App() {
     exportText += `\nParticipants (${totalParticipants} total, ${veganParticipants} Vegan${
       veganParticipants !== 1 ? "s" : ""
     }):\n`;
-    
+
     participants.forEach((p) => {
       exportText += `- ${p.name}${p.isVegan ? " (Vegan)" : ""}\n`;
     });
@@ -317,15 +337,17 @@ function App() {
     exportText += `\nSuggested Contributions:\n`;
     distribution.forEach((p) => {
       exportText += `- ${p.name}${p.isVegan ? " (Vegan)" : ""}: `;
-      
+
       if (p.items.length > 0) {
-        const itemsText = p.items.map(item => `${item.quantity} ${item.type}`).join(', ');
+        const itemsText = p.items
+          .map((item) => `${item.quantity} ${item.type}`)
+          .join(", ");
         exportText += itemsText;
       } else {
         exportText += "Nothing assigned (please coordinate with group)";
       }
-      
-      exportText += '\n';
+
+      exportText += "\n";
     });
 
     exportText += `\n(Note: This is just a suggestion for splitting items!)`;
@@ -361,7 +383,7 @@ function App() {
       // Using encodeURIComponent instead of btoa to handle non-Latin1 characters like emojis
       const encodedData = encodeURIComponent(JSON.stringify(planData));
       const shareURL = `${window.location.origin}${window.location.pathname}?plan=${encodedData}`;
-      
+
       // Create a textarea element to copy URL
       const textArea = document.createElement("textarea");
       textArea.value = shareURL;
@@ -369,7 +391,7 @@ function App() {
       textArea.select();
       document.execCommand("copy");
       document.body.removeChild(textArea);
-      
+
       alert("Share link copied to clipboard!");
     } catch (error) {
       console.error("Error generating share URL:", error);
@@ -511,41 +533,47 @@ function App() {
                   Total Participants: {calculationResults.totalParticipants} (
                   {calculationResults.veganParticipants} Vegan)
                 </p>
-                
+
                 <div className="totals-section">
                   <h4>Meat:</h4>
                   <ul>
-                    {Object.entries(calculationResults.meatTotals).map(([meatType, quantity]) => (
-                      <li key={meatType}>
-                        {meatType} - Total: {quantity} units
-                      </li>
-                    ))}
+                    {Object.entries(calculationResults.meatTotals).map(
+                      ([meatType, quantity]) => (
+                        <li key={meatType}>
+                          {meatType} - Total: {quantity} units
+                        </li>
+                      )
+                    )}
                   </ul>
                 </div>
-                
+
                 <div className="totals-section">
                   <h4>Beverages:</h4>
                   <ul>
-                    {Object.entries(calculationResults.beverageTotals).map(([bevType, quantity]) => (
-                      <li key={bevType}>
-                        {bevType} - Total: {quantity} units
-                      </li>
-                    ))}
+                    {Object.entries(calculationResults.beverageTotals).map(
+                      ([bevType, quantity]) => (
+                        <li key={bevType}>
+                          {bevType} - Total: {quantity} units
+                        </li>
+                      )
+                    )}
                   </ul>
                 </div>
-                
+
                 <div className="totals-section">
                   <h4>Side Dishes:</h4>
                   <ul>
-                    {Object.entries(calculationResults.sideDishTotals).map(([sideType, quantity]) => (
-                      <li key={sideType}>
-                        {sideType} - Total: {quantity} units
-                      </li>
-                    ))}
+                    {Object.entries(calculationResults.sideDishTotals).map(
+                      ([sideType, quantity]) => (
+                        <li key={sideType}>
+                          {sideType} - Total: {quantity} units
+                        </li>
+                      )
+                    )}
                   </ul>
                 </div>
               </div>
-              
+
               <div className="distribution">
                 <h4>Suggested Distribution:</h4>
                 <ul>
@@ -555,20 +583,19 @@ function App() {
                         {person.name}
                         {person.isVegan ? " (Vegan)" : ""}:
                       </strong>{" "}
-                      {person.items.length > 0 
+                      {person.items.length > 0
                         ? person.items.map((item, i) => (
                             <span key={i}>
                               {i > 0 && ", "}
                               {item.quantity} {item.type}
                             </span>
                           ))
-                        : "Nothing assigned"
-                      }
+                        : "Nothing assigned"}
                     </li>
                   ))}
                 </ul>
               </div>
-              
+
               <div className="share-export">
                 <button onClick={handleExport}>Export for Group Chat</button>
                 <button onClick={generateShareURL}>Share Plan</button>
