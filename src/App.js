@@ -10,6 +10,7 @@ function App() {
   const [selectedMeatTypes, setSelectedMeatTypes] = useState([]);
   const [selectedBeverageTypes, setSelectedBeverageTypes] = useState([]);
   const [selectedSideDishTypes, setSelectedSideDishTypes] = useState([]);
+  const [selectedExtrasTypes, setSelectedExtrasTypes] = useState([]);
 
   // Predefined food and beverage options
   const meatOptions = [
@@ -36,6 +37,16 @@ function App() {
     { value: "Salad 🥗", label: "Salad 🥗" },
   ];
 
+  // New extras options
+  const extrasOptions = [
+    { value: "Bread 🍞", label: "Bread 🍞" },
+    { value: "Forks & Dishes & Napkins 🍽️", label: "Forks & Dishes & Napkins 🍽️" },
+    { value: "Ketchup 🍅", label: "Ketchup 🍅" },
+    { value: "BBQ Sauce 🥫", label: "BBQ Sauce 🥫" },
+    { value: "Mayonnaise 🥚", label: "Mayonnaise 🥚" },
+    { value: "Mustard 🟡", label: "Mustard 🟡" },
+  ];
+
   // State for calculation results
   const [calculationResults, setCalculationResults] = useState(null);
 
@@ -55,6 +66,8 @@ function App() {
           setSelectedBeverageTypes(decodedPlan.selectedBeverageTypes);
         if (decodedPlan.selectedSideDishTypes)
           setSelectedSideDishTypes(decodedPlan.selectedSideDishTypes);
+        if (decodedPlan.selectedExtrasTypes)
+          setSelectedExtrasTypes(decodedPlan.selectedExtrasTypes);
       } catch (error) {
         console.error("Error loading shared plan:", error);
       }
@@ -70,6 +83,7 @@ function App() {
       {
         name: newParticipantName,
         isVegan: false,
+        hungerLevel: 3, // Default hunger level (middle of 1-5 scale)
       },
     ]);
     setNewParticipantName("");
@@ -87,6 +101,31 @@ function App() {
     const updatedParticipants = [...participants];
     updatedParticipants[index].isVegan = !updatedParticipants[index].isVegan;
     setParticipants(updatedParticipants);
+  };
+
+  // Handle hunger level change
+  const handleHungerLevelChange = (index, level) => {
+    const updatedParticipants = [...participants];
+    updatedParticipants[index].hungerLevel = level;
+    setParticipants(updatedParticipants);
+  };
+
+  // Get hunger emoji based on level
+  const getHungerEmoji = (level) => {
+    switch (parseInt(level)) {
+      case 1:
+        return "😐 Not hungry";
+      case 2:
+        return "🙂 Slightly hungry";
+      case 3:
+        return "😋 Hungry";
+      case 4:
+        return "😮 Very hungry";
+      case 5:
+        return "🤤 Starving";
+      default:
+        return "😋 Hungry";
+    }
   };
 
   // Handle food selection checkboxes
@@ -120,6 +159,17 @@ function App() {
     });
   };
 
+  // Handle extras selection
+  const handleExtrasSelection = (value) => {
+    setSelectedExtrasTypes((prev) => {
+      if (prev.includes(value)) {
+        return prev.filter((type) => type !== value);
+      } else {
+        return [...prev, value];
+      }
+    });
+  };
+
   // Calculate food and beverage needs
   const calculateNeeds = () => {
     if (
@@ -138,37 +188,52 @@ function App() {
     const veganParticipants = participants.filter((p) => p.isVegan).length;
     const nonVeganParticipants = totalParticipants - veganParticipants;
 
-    // Calculate totals based on rules - 2 units per non-vegan for each meat type
+    // Calculate totals based on rules and hunger levels
     const meatTotals = {};
     selectedMeatTypes.forEach((meatType) => {
-      meatTotals[meatType] = Math.ceil(
-        nonVeganParticipants * (2 / selectedMeatTypes.length)
-      );
+      let total = 0;
+      participants.forEach((participant) => {
+        if (!participant.isVegan) {
+          const hungerFactor = 0.5 + participant.hungerLevel * 0.25;
+          total += (2 * hungerFactor) / selectedMeatTypes.length;
+        }
+      });
+      meatTotals[meatType] = Math.ceil(total);
     });
 
-    // 1.5 units per person for each beverage type
     const beverageTotals = {};
     selectedBeverageTypes.forEach((bevType) => {
-      beverageTotals[bevType] = Math.ceil(
-        totalParticipants * (1.5 / selectedBeverageTypes.length)
-      );
+      let total = 0;
+      participants.forEach((participant) => {
+        const hungerFactor = 0.75 + participant.hungerLevel * 0.15;
+        total += (1.5 * hungerFactor) / selectedBeverageTypes.length;
+      });
+      beverageTotals[bevType] = Math.ceil(total);
     });
 
-    // 1 for non-vegan, 2 for vegan for each side dish
     const sideDishTotals = {};
     selectedSideDishTypes.forEach((sideType) => {
-      sideDishTotals[sideType] = Math.ceil(
-        (nonVeganParticipants * 1 + veganParticipants * 2) /
-          selectedSideDishTypes.length
-      );
+      let total = 0;
+      participants.forEach((participant) => {
+        const hungerFactor = 0.5 + participant.hungerLevel * 0.25;
+        const baseAmount = participant.isVegan ? 2 : 1;
+        total += (baseAmount * hungerFactor) / selectedSideDishTypes.length;
+      });
+      sideDishTotals[sideType] = Math.ceil(total);
     });
 
-    // Create a more intelligent distribution that assigns specific items to people
+    const extrasTotals = {};
+    selectedExtrasTypes.forEach((extraType) => {
+      const total = Math.max(1, Math.ceil(totalParticipants / 4));
+      extrasTotals[extraType] = total;
+    });
+
     const distribution = optimizeDistribution(
       participants,
       meatTotals,
       beverageTotals,
-      sideDishTotals
+      sideDishTotals,
+      extrasTotals
     );
 
     setCalculationResults({
@@ -177,40 +242,39 @@ function App() {
       meatTotals,
       beverageTotals,
       sideDishTotals,
+      extrasTotals,
       distribution,
     });
   };
 
-  // Optimize distribution of food and beverages among participants
   const optimizeDistribution = (
     participants,
     meatTotals,
     beverageTotals,
-    sideDishTotals
+    sideDishTotals,
+    extrasTotals
   ) => {
-    // Create a copy of participants to work with
     const distributionParticipants = [...participants];
 
-    // Initialize distribution with empty assignments
     const distribution = distributionParticipants.map((p) => ({
       name: p.name,
       isVegan: p.isVegan,
+      hungerLevel: p.hungerLevel,
       items: [],
     }));
 
-    // Distribute meat types - only to non-vegans
-    const nonVeganIndices = distributionParticipants
-      .map((p, i) => (p.isVegan ? -1 : i))
-      .filter((i) => i !== -1);
+    const nonVeganParticipants = distributionParticipants
+      .map((p, i) =>
+        p.isVegan ? null : { index: i, hungerLevel: p.hungerLevel }
+      )
+      .filter((p) => p !== null)
+      .sort((a, b) => b.hungerLevel - a.hungerLevel);
 
-    // Distribute meat - try to keep each type with one person if possible
     let meatTypeIndex = 0;
     Object.entries(meatTotals).forEach(([meatType, quantity]) => {
-      // Find the best person to assign this meat type to
       const personIndex =
-        nonVeganIndices[meatTypeIndex % nonVeganIndices.length];
+        nonVeganParticipants[meatTypeIndex % nonVeganParticipants.length].index;
 
-      // Add the meat item
       distribution[personIndex].items.push({
         type: meatType,
         quantity: quantity,
@@ -219,13 +283,15 @@ function App() {
       meatTypeIndex++;
     });
 
-    // Distribute beverages - to everyone
+    const sortedParticipants = distributionParticipants
+      .map((p, i) => ({ index: i, hungerLevel: p.hungerLevel }))
+      .sort((a, b) => b.hungerLevel - a.hungerLevel);
+
     let beverageTypeIndex = 0;
     Object.entries(beverageTotals).forEach(([beverageType, quantity]) => {
-      // Try to distribute evenly
-      const personIndex = beverageTypeIndex % participants.length;
+      const personIndex =
+        sortedParticipants[beverageTypeIndex % sortedParticipants.length].index;
 
-      // Add the beverage item
       distribution[personIndex].items.push({
         type: beverageType,
         quantity: quantity,
@@ -234,23 +300,25 @@ function App() {
       beverageTypeIndex++;
     });
 
-    // Distribute side dishes - more to vegans
+    const veganParticipants = distributionParticipants
+      .map((p, i) =>
+        p.isVegan ? { index: i, hungerLevel: p.hungerLevel } : null
+      )
+      .filter((p) => p !== null)
+      .sort((a, b) => b.hungerLevel - a.hungerLevel);
+
     let sideTypeIndex = 0;
     Object.entries(sideDishTotals).forEach(([sideType, quantity]) => {
-      // Prefer giving side dishes to vegans first
-      const veganIndices = distributionParticipants
-        .map((p, i) => (p.isVegan ? i : -1))
-        .filter((i) => i !== -1);
-
-      if (veganIndices.length > 0) {
-        const personIndex = veganIndices[sideTypeIndex % veganIndices.length];
+      if (veganParticipants.length > 0) {
+        const personIndex =
+          veganParticipants[sideTypeIndex % veganParticipants.length].index;
         distribution[personIndex].items.push({
           type: sideType,
           quantity: quantity,
         });
       } else {
-        // If no vegans, distribute to anyone
-        const personIndex = sideTypeIndex % participants.length;
+        const personIndex =
+          sortedParticipants[sideTypeIndex % sortedParticipants.length].index;
         distribution[personIndex].items.push({
           type: sideType,
           quantity: quantity,
@@ -260,19 +328,32 @@ function App() {
       sideTypeIndex++;
     });
 
-    // Balance the load a bit - check if some participants have nothing assigned
+    let extrasTypeIndex = 0;
+    Object.entries(extrasTotals).forEach(([extraType, quantity]) => {
+      const participantsByItemCount = [...distribution]
+        .map((p, index) => ({ index, itemCount: p.items.length }))
+        .sort((a, b) => a.itemCount - b.itemCount);
+
+      const personIndex =
+        participantsByItemCount[extrasTypeIndex % participantsByItemCount.length].index;
+      distribution[personIndex].items.push({
+        type: extraType,
+        quantity: quantity,
+      });
+
+      extrasTypeIndex++;
+    });
+
     const unassignedParticipants = distribution.filter(
       (p) => p.items.length === 0
     );
 
     if (unassignedParticipants.length > 0) {
-      // Find participants with more than one item
       const overloadedParticipants = distribution
         .map((p, index) => ({ index, itemCount: p.items.length }))
         .filter((p) => p.itemCount > 1)
         .sort((a, b) => b.itemCount - a.itemCount);
 
-      // Redistribute items from overloaded to unassigned participants
       unassignedParticipants.forEach((unassigned, unassignedIndex) => {
         if (overloadedParticipants.length > unassignedIndex) {
           const donorIndex = overloadedParticipants[unassignedIndex].index;
@@ -291,7 +372,6 @@ function App() {
     return distribution;
   };
 
-  // Generate export text for group chat
   const generateExportText = () => {
     if (!calculationResults) return "";
 
@@ -301,6 +381,7 @@ function App() {
       meatTotals,
       beverageTotals,
       sideDishTotals,
+      extrasTotals,
       distribution,
     } = calculationResults;
 
@@ -308,35 +389,43 @@ function App() {
 
     exportText += `We need:\n`;
 
-    // Add meat totals
     exportText += `Meat:\n`;
     Object.entries(meatTotals).forEach(([meatType, quantity]) => {
       exportText += `- ${meatType} (Total: ${quantity})\n`;
     });
 
-    // Add beverage totals
     exportText += `\nBeverages:\n`;
     Object.entries(beverageTotals).forEach(([beverageType, quantity]) => {
       exportText += `- ${beverageType} (Total: ${quantity})\n`;
     });
 
-    // Add side dish totals
     exportText += `\nSides:\n`;
     Object.entries(sideDishTotals).forEach(([sideType, quantity]) => {
       exportText += `- ${sideType} (Total: ${quantity})\n`;
     });
+
+    if (Object.keys(extrasTotals).length > 0) {
+      exportText += `\nExtras:\n`;
+      Object.entries(extrasTotals).forEach(([extraType, quantity]) => {
+        exportText += `- ${extraType} (Total: ${quantity})\n`;
+      });
+    }
 
     exportText += `\nParticipants (${totalParticipants} total, ${veganParticipants} Vegan${
       veganParticipants !== 1 ? "s" : ""
     }):\n`;
 
     participants.forEach((p) => {
-      exportText += `- ${p.name}${p.isVegan ? " (Vegan)" : ""}\n`;
+      exportText += `- ${p.name}${
+        p.isVegan ? " (Vegan)" : ""
+      } - ${getHungerEmoji(p.hungerLevel)}\n`;
     });
 
     exportText += `\nSuggested Contributions:\n`;
     distribution.forEach((p) => {
-      exportText += `- ${p.name}${p.isVegan ? " (Vegan)" : ""}: `;
+      exportText += `- ${p.name}${
+        p.isVegan ? " (Vegan)" : ""
+      } (${getHungerEmoji(p.hungerLevel)}): `;
 
       if (p.items.length > 0) {
         const itemsText = p.items
@@ -355,11 +444,9 @@ function App() {
     return exportText;
   };
 
-  // Handle export for group chat
   const handleExport = () => {
     const exportText = generateExportText();
 
-    // Create a textarea element to copy text
     const textArea = document.createElement("textarea");
     textArea.value = exportText;
     document.body.appendChild(textArea);
@@ -370,21 +457,19 @@ function App() {
     alert("BBQ plan copied to clipboard!");
   };
 
-  // Generate share URL
   const generateShareURL = () => {
     const planData = {
       participants,
       selectedMeatTypes,
       selectedBeverageTypes,
       selectedSideDishTypes,
+      selectedExtrasTypes,
     };
 
     try {
-      // Using encodeURIComponent instead of btoa to handle non-Latin1 characters like emojis
       const encodedData = encodeURIComponent(JSON.stringify(planData));
       const shareURL = `${window.location.origin}${window.location.pathname}?plan=${encodedData}`;
 
-      // Create a textarea element to copy URL
       const textArea = document.createElement("textarea");
       textArea.value = shareURL;
       document.body.appendChild(textArea);
@@ -408,7 +493,6 @@ function App() {
         <section className="food-selection">
           <h2>1. Select Food & Beverages</h2>
 
-          {/* Meat Selection */}
           <div className="selector">
             <label>Select Meat Types (choose multiple):</label>
             <div className="checkbox-container">
@@ -426,7 +510,6 @@ function App() {
             </div>
           </div>
 
-          {/* Beverage Selection */}
           <div className="selector">
             <label>Select Beverage Types (choose multiple):</label>
             <div className="checkbox-container">
@@ -444,7 +527,6 @@ function App() {
             </div>
           </div>
 
-          {/* Side Dish Selection */}
           <div className="selector">
             <label>Select Side Dishes (choose multiple):</label>
             <div className="checkbox-container">
@@ -455,6 +537,23 @@ function App() {
                     value={option.value}
                     checked={selectedSideDishTypes.includes(option.value)}
                     onChange={() => handleSideDishSelection(option.value)}
+                  />
+                  {option.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="selector">
+            <label>Select Extras (choose multiple):</label>
+            <div className="checkbox-container">
+              {extrasOptions.map((option) => (
+                <label key={option.value} className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    value={option.value}
+                    checked={selectedExtrasTypes.includes(option.value)}
+                    onChange={() => handleExtrasSelection(option.value)}
                   />
                   {option.label}
                 </label>
@@ -485,17 +584,51 @@ function App() {
                 {participants.map((participant, index) => (
                   <li key={index}>
                     <div className="participant-item">
-                      <span>{participant.name}</span>
-                      <div className="vegan-toggle">
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={participant.isVegan}
-                            onChange={() => handleToggleVegan(index)}
-                          />
-                          Vegan
-                        </label>
+                      <div className="participant-info">
+                        <span className="participant-name">
+                          {participant.name}
+                        </span>
+                        <div className="vegan-toggle">
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={participant.isVegan}
+                              onChange={() => handleToggleVegan(index)}
+                            />
+                            Vegan
+                          </label>
+                        </div>
                       </div>
+
+                      <div className="hunger-slider">
+                        <label>
+                          How hungry?{" "}
+                          {getHungerEmoji(participant.hungerLevel || 3)}
+                        </label>
+                        <div className="slider-container">
+                          <input
+                            type="range"
+                            min="1"
+                            max="5"
+                            value={participant.hungerLevel || 3}
+                            onChange={(e) =>
+                              handleHungerLevelChange(
+                                index,
+                                parseInt(e.target.value)
+                              )
+                            }
+                            className="hunger-range"
+                          />
+                          <div className="hunger-scale">
+                            <span>😐</span>
+                            <span>🙂</span>
+                            <span>😋</span>
+                            <span>😮</span>
+                            <span>🤤</span>
+                          </div>
+                        </div>
+                      </div>
+
                       <button
                         className="remove-btn"
                         onClick={() => handleRemoveParticipant(index)}
@@ -572,6 +705,22 @@ function App() {
                     )}
                   </ul>
                 </div>
+
+                {calculationResults.extrasTotals &&
+                  Object.keys(calculationResults.extrasTotals).length > 0 && (
+                    <div className="totals-section">
+                      <h4>Extras:</h4>
+                      <ul>
+                        {Object.entries(calculationResults.extrasTotals).map(
+                          ([extraType, quantity]) => (
+                            <li key={extraType}>
+                              {extraType} - Total: {quantity} units
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
               </div>
 
               <div className="distribution">
@@ -581,7 +730,8 @@ function App() {
                     <li key={index}>
                       <strong>
                         {person.name}
-                        {person.isVegan ? " (Vegan)" : ""}:
+                        {person.isVegan ? " (Vegan)" : ""} (
+                        {getHungerEmoji(person.hungerLevel)}):
                       </strong>{" "}
                       {person.items.length > 0
                         ? person.items.map((item, i) => (
