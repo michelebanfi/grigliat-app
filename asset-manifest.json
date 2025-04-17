@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/grigliat-app/static/css/main.9d7092ca.css",
-    "main.js": "/grigliat-app/static/js/main.e1ab8ae4.js",
+    "main.css": "/grigliat-app/static/css/main.a673f4b9.css",
+    "main.js": "/grigliat-app/static/js/main.d03b9547.js",
     "static/js/453.13ffd1df.chunk.js": "/grigliat-app/static/js/453.13ffd1df.chunk.js",
     "index.html": "/grigliat-app/index.html",
-    "main.9d7092ca.css.map": "/grigliat-app/static/css/main.9d7092ca.css.map",
-    "main.e1ab8ae4.js.map": "/grigliat-app/static/js/main.e1ab8ae4.js.map",
+    "main.a673f4b9.css.map": "/grigliat-app/static/css/main.a673f4b9.css.map",
+    "main.d03b9547.js.map": "/grigliat-app/static/js/main.d03b9547.js.map",
     "453.13ffd1df.chunk.js.map": "/grigliat-app/static/js/453.13ffd1df.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.9d7092ca.css",
-    "static/js/main.e1ab8ae4.js"
+    "static/css/main.a673f4b9.css",
+    "static/js/main.d03b9547.js"
   ]
 }
